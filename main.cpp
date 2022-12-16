@@ -5,19 +5,22 @@
 
 int main ()
 {
-  ft::vector<int> myvector;
-  for (int i=0; i<10; i++) myvector.push_back(i);
+  ft::vector<int> first;
+  ft::vector<int> second;
+  ft::vector<int> third;
 
-  typedef ft::vector<int>::iterator iter_type;
-  iter_type from (myvector.begin());  
-  // iter_type until (myvector.end());                  
-  // ft::reverse_iterator<iter_type> rev_until (from);   
-  // ft::reverse_iterator<iter_type> rev_from (until);  
+  first.assign (7,100);             // 7 ints with a value of 100
 
-  // std::cout << "myvector:";
-  // while (rev_from != rev_until)
-  //   std::cout << ' ' << *rev_from++;
-  // std::cout << '\n';
+  std::vector<int>::iterator it;
+  it=first.begin();
 
-  // return 0;
+  second.assign (it,first.end()-1); // the 5 central values of first
+
+  int myints[] = {1776,7,4};
+  third.assign (myints,myints+3);   // assigning from array.
+
+  std::cout << "Size of first: " << int (first.size()) << '\n';
+  std::cout << "Size of second: " << int (second.size()) << '\n';
+  std::cout << "Size of third: " << int (third.size()) << '\n';
+  return 0;
 }
