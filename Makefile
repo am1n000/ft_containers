@@ -1,5 +1,5 @@
 CPP=C++
-CFLAGS=-Wall -Wextra -Werror -Wshadow -std=c++98
+CFLAGS= -Wall -Wextra -Werror -Wshadow -std=c++98
 NAME=Containers
 SRC=main.cpp
 OBJ=$(SRC:.cpp=.o)

@@ -30,8 +30,8 @@ namespace ft
     template<typename  T>
     struct iterator_traits<const T*>
     {
-        typedef ptrdiff_t                           difference_type;
         typedef T                                   value_type;
+        typedef ptrdiff_t                           difference_type;
         typedef const T*                            pointer;
         typedef const T&                            reference;
         typedef std::random_access_iterator_tag     iterator_category;
@@ -48,28 +48,27 @@ namespace ft
             typedef typename ft::iterator_traits<iterator_type>::difference_type            difference_type;
             typedef typename ft::iterator_traits<iterator_type>::pointer                    pointer;
             typedef typename ft::iterator_traits<iterator_type>::reference                  reference;
-            typedef typename ft::iterator_traits<iterator_type>::iterator_category         iterator_category;
+            typedef typename ft::iterator_traits<iterator_type>::iterator_category          iterator_category;
             
         private:
-            pointer data;
+            pointer _data;
 
         public:
             // default constructor
-            iterator(): data(nullptr) {};
+            iterator(): _data(nullptr) {};
             //constructor        
-            iterator(pointer x): data(x) {};
+            iterator(iterator_type x): _data(x) {};
             
             //copy constructor
             template <class Iter>
-            iterator (const iterator<Iter>& obj)
+            iterator (const ft::iterator<Iter>& obj) : _data(obj.base())
             {
-                *data = obj;
             };
 
             template <class Iter>
-            iterator &operator=(const iterator<Iter>& obj)
+            const iterator &operator=(const iterator<Iter>& obj)
             {
-                this->data = obj.data;
+                _data = obj.base();
                 return (*this);
             }
 
@@ -81,14 +80,19 @@ namespace ft
             {
                 iterator_type   tmp;
                 
-                tmp = data;
+                tmp = _data;
                 return (*tmp);
             }
+            iterator_type base() const
+            {
+                return (_data);
+            };
+
             //operator +
             //increment operators
             iterator& operator++() //pre increment
             {
-                ++this->data;
+                ++this->_data;
                 return (*this);
             }
             iterator operator++(int) //post increment
@@ -96,24 +100,24 @@ namespace ft
                 iterator  plus;
 
                 plus = *this;
-                this->data++;
+                this->_data++;
                 return (plus);
             }
             iterator operator+(difference_type n) const
             {
-                return (this->data + n);
+                return (this->_data + n);
             }
             //operator +=
             iterator &operator+=(difference_type n)
             {
 
-                data = this->data + n;
+                _data = this->_data + n;
                 return (*this);
             }
             //decrement operators
             iterator& operator--() //pre decrement
             {
-                --this->data;
+                --this->_data;
                 return (*this);
             }
             iterator operator--(int) //post decrement
@@ -121,18 +125,18 @@ namespace ft
                 iterator  plus;
 
                 plus = *this;
-                this->data--;
+                this->_data--;
                 return (plus);
             }
             //operator -
             iterator operator-(difference_type n) const
             {
-                return (this->data - n);
+                return (this->_data - n);
             }
             //operator -=
             iterator &operator-=(difference_type n)
             {
-                this->data = this->data - n;
+                this->_data = this->_data - n;
                 return (*this);
             }
             //operator ->
@@ -143,37 +147,48 @@ namespace ft
             //operator []
             reference operator[](difference_type n) const
             {
-                return (*this + n);
+                return (this->_data[n]);
+            }
+
+            // Comparison////////////////
+            friend iterator operator+(difference_type n, iterator obj)
+            {
+                return (obj._data + n);
             }
             template<typename Iterat>
-            friend bool operator==(const iterator<Iterat>& obj1, const iterator<Iterat>& obj2)
+            friend int operator-(const iterator<Iterat>& obj1, const iterator<Iterat>& obj2)
             {
-                return (obj1.data == obj2.data);
+                return (obj1._data -obj2._data);
+            }
+            template<typename Iterat1, typename Iterat2>
+            friend bool operator==(const iterator<Iterat1>& obj1, const iterator<Iterat2>& obj2)
+            {
+                return (obj1.base() == obj2.base());
             }	
-            template<typename Iterat>
-            friend bool operator!=(const iterator<Iterat>& obj1, const iterator<Iterat>& obj2)
+            template<typename Iterat1, typename Iterat2>
+            friend bool operator!=(const iterator<Iterat1>& obj1, const iterator<Iterat2>& obj2)
             {
-                return (obj1.data != obj2.data);
+                return (obj1.base() != obj2.base());
             }
-            template<typename Iterat>
-            friend bool operator< (const iterator<Iterat>& obj1, const iterator<Iterat>& obj2)
+            template<typename Iterat1, typename Iterat2>
+            friend bool operator< (const iterator<Iterat1>& obj1, const iterator<Iterat2>& obj2)
             {
-                return (obj1.data < obj2.data);
+                return (obj1.base() < obj2.base());
             }
-            template<typename Iterat>
-            friend bool operator<=(const iterator<Iterat>& obj1, const iterator<Iterat>& obj2)
+            template<typename Iterat1, typename Iterat2>
+            friend bool operator<=(const iterator<Iterat1>& obj1, const iterator<Iterat2>& obj2)
             {
-                return (obj1.data <= obj2.data);
+                return (obj1.base() <= obj2.base());
             }
-            template<typename Iterat>
-            friend bool operator> (const iterator<Iterat>& obj1, const iterator<Iterat>& obj2)
+            template<typename Iterat1, typename Iterat2>
+            friend bool operator> (const iterator<Iterat1>& obj1, const iterator<Iterat2>& obj2)
             {
-                return (obj1.data > obj2.data);
+                return (obj1.base() > obj2.base());
             }
-            template<typename Iterat>
-            friend bool operator>=(const iterator<Iterat>& obj1, const iterator<Iterat>& obj2)
+            template<typename Iterat1, typename Iterat2>
+            friend bool operator>=(const iterator<Iterat1>& obj1, const iterator<Iterat2>& obj2)
             {
-                return (obj1.data >= obj2.data);
+                return (obj1.base() >= obj2.base());
             }
     };
 
@@ -186,42 +201,49 @@ namespace ft
             typedef typename ft::iterator_traits<_Iter>::difference_type            difference_type;
             typedef typename ft::iterator_traits<_Iter>::pointer                    pointer;
             typedef typename ft::iterator_traits<_Iter>::reference                  reference;
-            typedef typename ft::iterator_traits<_Iter>::iterator_category          reverse_iterator_category;
+            typedef typename ft::iterator_traits<_Iter>::iterator_category          iterator_category;
             
-        public:
-            iterator_type _data;
+        private:
+            iterator_type _it;
 
         public:
             // default constructor
-            reverse_iterator(): _data(nullptr) {};
+            reverse_iterator(): _it() {};
             
             //constructor                    
             explicit reverse_iterator (iterator_type it)
             {
-                this->_data = it;
+                this->_it = it;
             };
 
             //copy constructor
             template <class Iter>
             reverse_iterator (const reverse_iterator<Iter>& obj)
             {
-                *_data = obj;
+                _it = obj.base();
             };
 
             template <class Iter>
             reverse_iterator &operator=(const reverse_iterator<Iter>& obj)
             {
-                this->_data = obj._data;
+                this->_it = obj.base();
                 return (*this);
             }
 
             // destructor
             ~reverse_iterator() {}
+
+
+            iterator_type base() const
+            {
+                return (this->_it);
+            };
+
             //operator +
             //increment operators
             reverse_iterator& operator++() //pre increment
             {
-                --this->_data;
+                --this->_it;
                 return (*this);
             }
             reverse_iterator operator++(int) //post increment
@@ -229,25 +251,24 @@ namespace ft
                 reverse_iterator  plus;
 
                 plus = *this;
-                this->_data--;
+                this->_it--;
                 return (plus);
             }
             reverse_iterator operator+(difference_type n) const
             {
-                    _data -= n;
-                return (*this);
+                return (reverse_iterator(_it - n));
             }
             //operator +=
             reverse_iterator &operator+=(difference_type n)
             {
 
-                _data -= n;
+                _it -= n;
                 return (*this);
             }
             //decrement operators
             reverse_iterator& operator--() //pre decrement
             {
-                ++this->_data;
+                ++this->_it;
                 return (*this);
             }
             reverse_iterator operator--(int) //post decrement
@@ -255,19 +276,18 @@ namespace ft
                 reverse_iterator  plus;
 
                 plus = *this;
-                this->_data++;
+                this->_it++;
                 return (plus);
             }
             //operator -
             reverse_iterator operator-(difference_type n) const
             {
-                    this->_data += n;
-                return (*this);
+                return (reverse_iterator(_it + n));
             }
             //operator -=
             reverse_iterator &operator-=(difference_type n)
             {
-                this->_data += n;
+                this->_it += n;
                 return (*this);
             }
             //dereference iterator
@@ -275,7 +295,7 @@ namespace ft
             {
                 iterator_type   tmp;
                 
-                tmp = _data;
+                tmp = _it;
                 return (*--tmp);
             }
             //operator ->
@@ -286,39 +306,48 @@ namespace ft
             //operator []
             reference operator[](difference_type n) const
             {
-                return (*this - n);
+                return (this->_it[-n - 1]);
             }
 
+            friend reverse_iterator operator+(difference_type n, reverse_iterator obj)
+            {
+                return (obj + n);
+            }
+            template<typename Iterat>
+            friend int operator-(const reverse_iterator<Iterat>& obj1, const reverse_iterator<Iterat>& obj2)
+            {
+                return (obj2._it - obj1._it);
+            }
             //relational operators
-            template<typename Iterat>
-            friend bool operator==(const reverse_iterator<Iterat>& obj1, const reverse_iterator<Iterat>& obj2)
+            template<typename Iterat1, typename Iterat2>
+            friend bool operator==(const reverse_iterator<Iterat1>& obj1, const reverse_iterator<Iterat2>& obj2)
             {
-                return (obj1._data == obj2._data);
+                return (obj1._it == obj2._it);
             }	
-            template<typename Iterat>
-            friend bool operator!=(const reverse_iterator<Iterat>& obj1, const reverse_iterator<Iterat>& obj2)
+            template<typename Iterat1, typename Iterat2>
+            friend bool operator!=(const reverse_iterator<Iterat1>& obj1, const reverse_iterator<Iterat2>& obj2)
             {
-                return (obj1._data != obj2._data);
+                return (obj1._it != obj2._it);
             }
-            template<typename Iterat>
-            friend bool operator< (const reverse_iterator<Iterat>& obj1, const reverse_iterator<Iterat>& obj2)
+            template<typename Iterat1, typename Iterat2>
+            friend bool operator< (const reverse_iterator<Iterat1>& obj1, const reverse_iterator<Iterat2>& obj2)
             {
-                return (obj1._data > obj2._data);
+                return (obj1._it > obj2._it);
             }
-            template<typename Iterat>
-            friend bool operator<=(const reverse_iterator<Iterat>& obj1, const reverse_iterator<Iterat>& obj2)
+            template<typename Iterat1, typename Iterat2>
+            friend bool operator<=(const reverse_iterator<Iterat1>& obj1, const reverse_iterator<Iterat2>& obj2)
             {
-                return (obj1._data >= obj2._data);
+                return (obj1._it >= obj2._it);
             }
-            template<typename Iterat>
-            friend bool operator> (const reverse_iterator<Iterat>& obj1, const reverse_iterator<Iterat>& obj2)
+            template<typename Iterat1, typename Iterat2>
+            friend bool operator> (const reverse_iterator<Iterat1>& obj1, const reverse_iterator<Iterat2>& obj2)
             {
-                return (obj1._data < obj2._data);
+                return (obj1._it < obj2._it);
             }
-            template<typename Iterat>
-            friend bool operator>=(const reverse_iterator<Iterat>& obj1, const reverse_iterator<Iterat>& obj2)
+            template<typename Iterat1, typename Iterat2>
+            friend bool operator>=(const reverse_iterator<Iterat1>& obj1, const reverse_iterator<Iterat2>& obj2)
             {
-                return (obj1._data <= obj2._data);
+                return (obj1._it <= obj2._it);
             }
     };
 
