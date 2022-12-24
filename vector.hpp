@@ -120,16 +120,31 @@ struct enable_if<true, T>
 				const allocator_type& alloc = allocator_type())
 				: _data(NULL), _size(0), _capacity(0), _alloc(alloc)
 			{
-				if (first != last)
+				
+				if (typeid(typename ft::iterator_traits<InputIterator>::iterator_category) == typeid(std::input_iterator_tag))
 				{
-					vector temp;
+					if (first != last)
+					{
+						vector temp;
+						for (;first != last; first++)
+							temp.push_back(*first);
+						_size = temp.size();
+						_capacity = temp.size();
+						_data = _alloc.allocate(_size);
+						for (size_type i = 0; i < _size; i++)
+							_alloc.construct(_data + i, temp[i]);
+					}
+				}
+				else
+				{
+					size_t n = std::distance(first, last);
+					this->_data = this->_alloc.allocate(n);
 					for (;first != last; first++)
-						temp.push_back(*first);
-					_size = temp.size();
-					_capacity = temp.size();
-					_data = _alloc.allocate(_size);
-					for (size_type i = 0; i < _size; i++)
-						_alloc.construct(_data + i, temp[i]);
+					{
+						this->_alloc.construct(_data + _size, *first);
+						_size++;
+					}
+					_capacity = n;
 				}
 			};
 
@@ -146,7 +161,16 @@ struct enable_if<true, T>
 		//operator =
 			vector &operator=(const vector& x) 
 			{
-				this->assign(x.begin(), x.end());
+				if (*this == x)
+					return (*this);
+				this->clear();
+				if (this->_data)
+					this->_alloc.deallocate(_data, _capacity);
+				this->_data = this->_alloc.allocate(x.size());
+				for (size_t i = 0; i < x.size(); i++)
+					this->_alloc.construct(this->_data + i, x[i]);
+				this->_size = x.size();
+				this->_capacity = x.size();
 				return (*this);
 			};
 		//destructor
@@ -216,7 +240,12 @@ struct enable_if<true, T>
 				else if (n > _size)
 				{
 					if (n > _capacity)
-						reserve(n);
+					{
+						if (_capacity == 0 || n > _capacity * 2)
+							reserve(n);
+						else
+							reserve(_capacity * 2);
+					}
 					for (size_t i = _size; i < n; i++)
 						push_back(val);
 				}
@@ -231,26 +260,30 @@ struct enable_if<true, T>
 			};
 			void reserve (size_type n)
 			{
+				if (_size + n >= this->max_size())
+					std::__throw_length_error("vector");
 				if (n <= _capacity)
 					return;
-				s_data *lst = NULL;
-				if (this->_capacity > 0)
+				if (this->_data)
 				{
-					for (size_t i = 0; i < _size; i++)
-						lstadd_back(&lst, lstnew(*(_data + i)));
-					for (size_t i = 0; i < _size ;i++)
-						_alloc.destroy(_data + i);
-					_alloc.deallocate(_data, _capacity);
+					pointer new_data = this->_alloc.allocate(n);
+					size_t i = 0;
+					for (; i < _size; i++)
+					{
+						this->_alloc.construct(new_data + i, *(_data + i));
+						this->_alloc.destroy(_data + i);
+					}
+					this->_alloc.deallocate(_data, _capacity);
+					_data = new_data;
+					_capacity = n;
+					_size = i;
 				}
-				this->_data = this->_alloc.allocate(n);
-				for (size_type i = 0; i < _size; i++)
+				else
 				{
-					_alloc.construct(this->_data + i, lst->content);
-					s_data	*ptr = lst->next;
-					delete (lst);
-					lst = ptr;
+					this->_data = this->_alloc.allocate(n);
+					_capacity = n;
 				}
-				_capacity = n;
+
 			};
 
 
@@ -300,36 +333,69 @@ struct enable_if<true, T>
 	// 		//modifiers
 
 			template <class InputIterator>
-			void assign (InputIterator first, InputIterator last)
+			void assign (InputIterator first, typename ft::enable_if<!ft::is_integral<InputIterator>::value, InputIterator>::type last)
 			{
-				this->clear();			
-				s_data *lst = NULL;
-				size_t n = 0;
-				for (; first != last; first++)
+
+				this->clear();
+				if (first == last)
+					return;
+				if (typeid(typename ft::iterator_traits<InputIterator>::iterator_category) == typeid(std::input_iterator_tag))
 				{
-					lstadd_back(&lst, lstnew(*first));
-					n++;
+					s_data *lst = NULL;
+					size_t n = 0;
+					for (; first != last; first++)
+					{
+						lstadd_back(&lst, lstnew(*first));
+						n++;
+					}
+					if (n > _capacity)
+					{
+						if (_data)
+							this->_alloc.deallocate(_data, _capacity);
+						_capacity = n;
+						this->_data = this->_alloc.allocate(_capacity);
+					}
+					for (size_type i = 0; i < n; i++)
+					{
+						_alloc.construct(this->_data + i, lst->content);
+						s_data	*ptr = lst->next;
+						delete (lst);
+						lst = ptr;
+					}
+					_size = n;
 				}
+				else
+				{
+					size_t n = std::distance(first, last);
+					if (n > _capacity)
+					{
+						if (_data)
+							this->_alloc.deallocate(_data, _capacity);
+						_capacity = n;
+						this->_data = this->_alloc.allocate(n);
+					}
+					for (;first != last; first++)
+					{
+						this->_alloc.construct(_data + _size, *first);
+						_size++;
+					}
+				}
+			};
+			void assign (typename ft::enable_if<ft::is_integral<size_type>::value, size_type>::type n, const value_type& val)
+			{
+				this->clear();
 				if (n > _capacity)
 				{
 					if (_data)
 						this->_alloc.deallocate(_data, _capacity);
 					_capacity = n;
-					this->_data = this->_alloc.allocate(_capacity);
+					this->_data = this->_alloc.allocate(n);
 				}
-				for (size_type i = 0; i < n; i++)
+				for (size_type i = 0 ;i != n; i++)
 				{
-					_alloc.construct(this->_data + i, lst->content);
-					s_data	*ptr = lst->next;
-					delete (lst);
-					lst = ptr;
+					this->_alloc.construct(_data + _size, val);
+					_size++;
 				}
-				_size = n;
-			};
-			void assign (typename ft::enable_if<ft::is_integral<size_type>::value, size_type>::type n, const value_type& val)
-			{
-				this->clear();
-				this->insert(this->begin(), n, val);
 			};
 			
 			void push_back (const value_type& val)
@@ -362,62 +428,98 @@ struct enable_if<true, T>
 					return;
 				if (_size + n >= this->max_size())
 					std::__throw_length_error("vector");
-				s_data *lst = NULL;
-				size_t count = position - this->begin();
-				size_t s = _size + n;
-				for (size_t i = 0; i < count; i++)
-					lstadd_back(&lst, lstnew(*(_data + i)));
-				for (; n > 0; n--)
-					lstadd_back(&lst, lstnew(val));
-				for (size_t i = count; i < _size; i++)
-					lstadd_back(&lst, lstnew(*(_data + i)));
-				this->clear();
-				if (_data)
-					this->_alloc.deallocate(_data, _capacity);
-				this->_data = this->_alloc.allocate(s);
-				for (size_type i = 0; i < s; i++)
+				size_t dist = position - this->begin();
+				size_t move = this->end() - position;
+				if (_size + n > _capacity)
 				{
-					_alloc.construct(this->_data + i, lst->content);
-					s_data	*ptr = lst->next;
-					delete (lst);
-					lst = ptr;
+					if (n <= _size)
+						reserve (_capacity * 2);
+					else
+						reserve (_size + n);
 				}
-				_size = s;
-				_capacity = s;
+				for (size_t i = _size - 1; move > 0; move--)
+				{
+					value_type temp = *(this->_data + i);
+					this->_alloc.destroy(this->_data + i);
+					this->_alloc.construct(this->_data + n + i, temp);
+					i--;
+				}
+				size_t nn = n;
+				for (size_t i = dist; nn > 0; nn--)
+				{
+					this->_alloc.construct(_data + i, val);
+					i++;
+				}
+				_size += n;
 			};
 			template <class InputIterator>
 			void insert (iterator position, typename ft::enable_if<!std::is_integral<InputIterator>::value, InputIterator>::type first,
 				InputIterator last)
-			{				
-				s_data *lst = NULL;
-				size_t count = position - this->begin();
-				size_t n = 0;
-				for (size_t i = 0; i < count; i++)
-					lstadd_back(&lst, lstnew(*(_data + i)));
-				for (; first != last; first++)
+			{
+
+				if (typeid(typename ft::iterator_traits<InputIterator>::iterator_category) == typeid(std::input_iterator_tag))
 				{
-					lstadd_back(&lst, lstnew(*first));
-					n++;
+					s_data *lst = NULL;
+					size_t count = position - this->begin();
+					size_t n = 0;
+					for (size_t i = 0; i < count; i++)
+						lstadd_back(&lst, lstnew(*(_data + i)));
+					for (; first != last; first++)
+					{
+						lstadd_back(&lst, lstnew(*first));
+						n++;
+					}
+					for (size_t i = count; i < _size; i++)
+						lstadd_back(&lst, lstnew(*(_data + i)));
+					size_t s = _size + n;
+					this->clear();
+					if (s >= _capacity)
+					{
+						if (_data)
+							this->_alloc.deallocate(_data, _capacity);
+						this->_data = this->_alloc.allocate(s);
+					}
+					for (size_type i = 0; i < s; i++)
+					{
+						_alloc.construct(this->_data + i, lst->content);
+						s_data	*ptr = lst->next;
+						delete (lst);
+						lst = ptr;
+					}
+					_size = s;
+					_capacity = s;
 				}
-				for (size_t i = count; i < _size; i++)
-					lstadd_back(&lst, lstnew(*(_data + i)));
-				size_t s = _size + n;
-				this->clear();
-				if (s >= _capacity)
+				else
 				{
-					if (_data)
-						this->_alloc.deallocate(_data, _capacity);
-					this->_data = this->_alloc.allocate(s);
+					
+					size_t n = 0;
+					for (InputIterator temp = first;temp != last; temp++)
+						n++;
+					if (n == 0)
+						return;
+					size_t dist = position - this->begin();
+					size_t move = this->end() - position;
+					if (_size + n > _capacity)
+					{
+						if (n <= _size)
+							reserve (_capacity * 2);
+						else
+							reserve (_size + n);
+					}
+					for (size_t i = _size - 1; move > 0; move--)
+					{
+						value_type temp = *(this->_data + i);
+						this->_alloc.destroy(this->_data + i);
+						this->_alloc.construct(this->_data + n + i, temp);
+						i--;
+					}
+					for (size_t i = dist; first != last; first++)
+					{
+						this->_alloc.construct(_data + i, *first);
+						i++;
+					}
+					_size += n;
 				}
-				for (size_type i = 0; i < s; i++)
-				{
-					_alloc.construct(this->_data + i, lst->content);
-					s_data	*ptr = lst->next;
-					delete (lst);
-					lst = ptr;
-				}
-				_size = s;
-				_capacity = s;
 			};
 			
 			iterator erase (iterator position)
@@ -431,14 +533,17 @@ struct enable_if<true, T>
 			};
 			iterator erase (iterator first, iterator last)
 			{
+				iterator temp = first;
 				size_t count = first - this->begin();
 				size_t n = last - first;
+				if (n == 0)
+					return (first);
 				for (;count + n < _size; count++)
 					*(_data + count) =  *(_data + count + n);
 				for (; first != last; first++)
 					_alloc.destroy(_data + count++);
 				_size -= n;
-				return (first);
+				return (temp);
 			};
 			
 			void swap (vector& x)

@@ -19,21 +19,45 @@
 #define RESET "\e[0m"
 
 
-#include "./ft_containers-terminator/tests/tests/vector/vector_prelude.hpp"
-#include <stdexcept>
-
 #define EQUAL(x) ((x) ? (std::cout << "\033[1;32mAC\033[0m\n") : (std::cout << "\033[1;31mWA\033[0m\n"))
 #define TIME_FAC 3 // the ft::vector methods can be slower up to std::vector methods * TIME_FAC (MAX 20)
 
-void test()
+time_t get_time(void)
 {
-	ft::vector<int> t(10, 10);
-	ft::vector<int> t2(t);
-	system("leaks a.out");
+    struct timeval time_now;
+
+    gettimeofday(&time_now, NULL);
+    time_t msecs_time = (time_now.tv_sec * 1e3) + (time_now.tv_usec / 1e3);
+    return (msecs_time);
 }
 
-int main ()
-{
-	ft::<T> vector(3, 3);
+// #include "./ft_containers-terminator/tests/tests/vector/vector_prelude.hpp"
 
+int main ()
+{              
+        time_t start1, start2, end1, end2, diff1, diff2;
+
+        ft::vector<int> v(11000000, 1);
+        v.push_back(1);
+        v.push_back(1);
+        v.push_back(1);
+        v.push_back(1);
+        v.push_back(1);
+        ft::vector<int> vv(10000000, 10);
+            start1 = get_time();
+            std::swap(v, vv);
+            end1 = get_time();
+            diff1 = end1 - start1;
+
+        
+        std::vector<int> v2(11000000, 1);
+        std::vector<int> vv2(10000000, 10);
+            start2 = get_time();
+            ft::swap(vv2, v2);
+            end2 = get_time();
+            diff2 = end2 - start2;
+
+
+        std::cout << diff1 << std::endl;
+        std::cout << diff2 << std::endl;
 }
