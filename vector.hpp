@@ -10,9 +10,9 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef FT_CONTAINERS
+#ifndef FT_VECTOR
 
-#define FT_CONTAINERS
+#define FT_VECTOR
 
 #include <iostream>
 #include <iostream>
@@ -23,19 +23,6 @@
 
 namespace ft
 {
-
-
-
-template<bool Cond, class T = void>
-struct enable_if {};
-
-template<class T>
-struct enable_if<true, T>
-{
-	typedef T type;
-};
-
-
 
 	template <class T, class Alloc = std::allocator<T> >
 	class vector
@@ -50,8 +37,8 @@ struct enable_if<true, T>
 			typedef typename allocator_type::const_pointer   	const_pointer;
 			typedef typename allocator_type::difference_type 	difference_type;
 			typedef typename allocator_type::size_type       	size_type;
-			typedef ft::iterator<pointer>			            iterator;
-			typedef ft::iterator<const_pointer>          		const_iterator;
+			typedef ft::vec_iterator<pointer>			        iterator;
+			typedef ft::vec_iterator<const_pointer>          	const_iterator;
 			typedef ft::reverse_iterator<iterator>          	reverse_iterator;
 			typedef ft::reverse_iterator<const_iterator>    	const_reverse_iterator;
 
@@ -148,7 +135,7 @@ struct enable_if<true, T>
 				}
 			};
 
-			vector (const vector& x)
+			vector (const vector& x)//need to check time//////////////////////////////////////.,/.,/.,/.,.,.,.,/,.,.,/><<><>
 			{
 				_size = 0;
 				_capacity = 0;
@@ -159,7 +146,7 @@ struct enable_if<true, T>
 			};
 
 		//operator =
-			vector &operator=(const vector& x) 
+			vector &operator=(const vector& x) //need to check time//////////////////////////////////////.,/.,/.,/.,.,.,.,/,.,.,/><<><>
 			{
 				if (*this == x)
 					return (*this);

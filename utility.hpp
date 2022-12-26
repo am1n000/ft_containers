@@ -12,6 +12,17 @@ namespace ft
 {
 
 
+    // enable_if
+    template<bool Cond, class T = void>
+    struct enable_if {};
+
+    template<class T>
+    struct enable_if<true, T>
+    {
+        typedef T type;
+    };
+    ///////////////////////////////////////
+
     // ft::equal
     template <class InputIterator1, class InputIterator2>
     bool equal ( InputIterator1 first1, InputIterator1 last1, InputIterator2 first2 )
