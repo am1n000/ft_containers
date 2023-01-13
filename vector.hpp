@@ -135,7 +135,7 @@ namespace ft
 				}
 			};
 
-			vector (const vector& x)//need to check time//////////////////////////////////////.,/.,/.,/.,.,.,.,/,.,.,/><<><>
+			vector (const vector& x)
 			{
 				_size = 0;
 				_capacity = 0;
@@ -146,7 +146,7 @@ namespace ft
 			};
 
 		//operator =
-			vector &operator=(const vector& x) //need to check time//////////////////////////////////////.,/.,/.,/.,.,.,.,/,.,.,/><<><>
+			vector &operator=(const vector& x) 
 			{
 				if (*this == x)
 					return (*this);
