@@ -352,35 +352,37 @@ namespace ft
 	};
 
 
-	template < class T, class node >
+	template < class T, class node , class Compare>
 	class tree_iterator
 	{
 		public :
 			typedef T															iterator_type;
 			typedef node                                                        node_ptr;
+			typedef	Compare														value_compare;
 			typedef typename ft::iterator_traits<T>::value_type                 value_type;
 			typedef typename ft::iterator_traits<T>::difference_type            difference_type;
 			typedef typename ft::iterator_traits<T>::pointer                    pointer;
 			typedef typename ft::iterator_traits<T>::reference                  reference;
-			typedef typename ft::iterator_traits<T>::iterator_category          iterator_category;
+			typedef typename std::bidirectional_iterator_tag          			iterator_category;
 			
 		public:
-			node_ptr _data;
+			node_ptr 		_data;
+			value_compare	_comp;
 
 		public:
 			// default constructor
-			tree_iterator(): _data(nullptr) {};
+			tree_iterator(): _data(nullptr), _comp(Compare()) {};
 			//constructor        
-			tree_iterator(node_ptr x): _data(x) {};
+			tree_iterator(node_ptr x): _data(x), _comp(Compare()) {};
 			
 			//copy constructor
-			template <class type, class Iter>
-			tree_iterator (const ft::tree_iterator<type, Iter>& obj) : _data(node_ptr(obj.base()))
+			template <class type, class Iter, class Comp>
+			tree_iterator (const ft::tree_iterator<type, Iter, Comp>& obj) : _data(node_ptr(obj.base()))
 			{
 			};
 
-			template <class type, class Iter>
-			tree_iterator &operator=(const tree_iterator<type,Iter>& obj)
+			template <class type, class Iter, class Comp>
+			tree_iterator &operator=(const tree_iterator<type,Iter, Comp>& obj)
 			{
 				_data = (node_ptr)obj.base();
 				return (*this);
@@ -411,95 +413,87 @@ namespace ft
 			{
 				if (this->_data->is_nil)
 					return (*this);
-				if(this->_data->right->is_nil == 0)
-					this->_data = this->_data->right;
-				else
+				if (this->_data->right->is_nil == 0) // ? if it has a right child look for the min in the right sub tree
 				{
-					while (_data->is_nil == 0)
-					{
-						if (_data->value < _data->parent->value)
-						{
-							this->_data = this->_data->parent;
-							break;
-						}
-						this->_data = this->_data->parent;
-					}
+					this->_data = this->_data->right;
+					while (this->_data->left->is_nil == 0)
+						this->_data = this->_data->left;
+					return (*this);
 				}
-				return (*this);
+				while (this->_data->parent->is_nil == 0 && this->_data == this->_data->parent->right) // ? go back to the parents
+					this->_data = this->_data->parent;
+				this->_data = this->_data->parent;
+				return(*this);
 			}
 			tree_iterator operator++(int) //post increment
 			{
 				tree_iterator  plus = *this;
 
-				if (this->_data->is_nil || this->_data->right->is_nil == 0)
-					this->_data = this->_data->right;
-				else
+				if (this->_data->is_nil)
+					return (plus);
+				if (this->_data->right->is_nil == 0)
 				{
-					while (_data->is_nil == 0)
-					{
-						if (_data->value < _data->parent->value)
-						{
-							this->_data = this->_data->parent;
-							break;
-						}
-						this->_data = this->_data->parent;
-					}
+					this->_data = this->_data->right;
+					while (this->_data->left->is_nil == 0)
+						this->_data = this->_data->left;
+					return (plus);
 				}
-				return (plus);
+				while (this->_data->parent->is_nil == 0 && this->_data == this->_data->parent->right)
+					this->_data = this->_data->parent;
+				this->_data = this->_data->parent;
+				return(plus);
 			}
 			//decrement operators
 			tree_iterator& operator--() //pre decrement
 			{
-				if (this->_data->is_end)
-					this->_data = this->_data->parent;
-				else if (this->_data->is_nil || this->_data->left->is_nil == 0)
-					this->_data = this->_data->left;
-				else
+				if (this->_data->is_nil)
 				{
-					while (_data->is_nil == 0)
-					{
-						if (_data->value > _data->parent->value)
-						{
-							this->_data = this->_data->parent;
-							break;
-						}
-						this->_data = this->_data->parent;
-					}
+					this->_data = this->_data->parent;
+					return (*this);
 				}
-				return (*this);
+				if (this->_data->left->is_nil == 0)
+				{
+					this->_data = this->_data->left;
+					while (this->_data->right->is_nil == 0)
+						this->_data = this->_data->right;
+					return (*this);
+				}
+				while (this->_data->parent->is_nil == 0 && this->_data == this->_data->parent->left) // ? go back to the parents
+					this->_data = this->_data->parent;
+				this->_data = this->_data->parent;
+				return(*this);
 			}
 			tree_iterator operator--(int) //post decrement
 			{
 				tree_iterator  plus = *this;
 
-				if (this->_data->is_end)
-					this->_data = this->_data->parent;
-				else if (this->_data->is_nil || this->_data->left->is_nil == 0)
-					this->_data = this->_data->left;
-				else
+				if (this->_data->is_nil)
 				{
-					while (_data->is_nil == 0)
-					{
-						if (_data->value > _data->parent->value)
-						{
-							this->_data = this->_data->parent;
-							break;
-						}
-						this->_data = this->_data->parent;
-					}
+					this->_data = this->_data->parent;
+					return (plus);
 				}
+				if (this->_data->left->is_nil == 0)
+				{
+					this->_data = this->_data->left;
+					while (this->_data->right->is_nil == 0)
+						this->_data = this->_data->right;
+					return (plus);
+				}
+				while (this->_data->parent->is_nil == 0 && this->_data == this->_data->parent->left) // ? go back to the parents
+					this->_data = this->_data->parent;
+				this->_data = this->_data->parent;
 				return (plus);
 			}
 
-			template<typename Iterat1, typename Iterat2, class nod>
-			friend bool operator==(const tree_iterator<Iterat1, nod>& obj1, const tree_iterator<Iterat2, nod>& obj2)
+			template<typename Iterat, typename Iterat2, class nod, class nod2, class Comp, class Comp2>
+			friend bool operator==(const tree_iterator<Iterat, nod, Comp>& obj1, const tree_iterator<Iterat2, nod2, Comp2>& obj2)
 			{
-				return (obj1.base() == obj2.base());
+				return (obj1._data == obj2._data);
 			}	
-			template<typename Iterat1, typename Iterat2, class nod>
-			friend bool operator!=(const tree_iterator<Iterat1, nod>& obj1, const tree_iterator<Iterat2, nod>& obj2)
+			template<typename Iterat, typename Iterat2, class nod, class nod2, class Comp, class Comp2>
+			friend bool operator!=(const tree_iterator<Iterat, nod, Comp>& obj1, const tree_iterator<Iterat2, nod2, Comp2>& obj2)
 			{
-				return (obj1.base() != obj2.base());
+				return (obj1._data != obj2._data);
 			}
 	};
 

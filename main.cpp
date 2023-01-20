@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/time.h>
+#include <random>
 // #include "./ft_containers-terminator/tests/tests/vector/vector_prelude.hpp"
 
 
@@ -49,18 +50,45 @@ struct MyCompare {
     }
 };
 
+template <typename Iter1, typename Iter2>
+bool compareMaps(Iter1 first1, Iter1 last1, Iter2 first2, Iter2 last2)
+{
+    for (; (first1 != last1) && (first2 != last2); ++first1, ++first2)
+        if (first1->first != first2->first || first1->second != first2->second)
+            return false;
+    return true;
+}
+
+
+volatile static time_t g_start1;
+volatile static time_t g_start2;
+volatile static time_t g_end1;
+volatile static time_t g_end2;
+
+time_t timer() {
+	struct timeval start = {};
+	gettimeofday(&start, nullptr);
+	time_t msecs_time = (start.tv_sec * 1000) + (start.tv_usec / 1000);
+	return msecs_time;
+}
+
+    void assign_overload_test() {
+        std::vector<int> v;
+        ft::map<int, int> mp;
+        for (int i = 0, j = 10; i < 20 * 10000; ++i, ++j)
+            mp.insert(ft::make_pair(i, j));
+        ft::map<int, int> mp2;
+        for (int i = 20 * 10000, j = 200010; i < 40 * 10000; ++i, ++j)
+            mp2.insert(ft::make_pair(i, j));
+        g_start1 = timer();
+        mp2 = mp;
+        g_end1 = timer();
+        ft::map<int, int>::iterator it = mp2.begin();
+    }
+
+
 int main ()
 {
-    ft::map<int, char> s;
-    s.insert(ft::make_pair(10, 'a'));
-    ft::map<int, char> s2(s);
-    // s.insert(ft::make_pair(5, 'b'));
-    // s[15] = 'c';
-    // s[20] = 'd';
-    // s[13] = 'e';
-    // s[7] = 'f';
-    // s[4] = 'g';
-    // for (ft::map<int, char>::iterator it = s.begin(); it != s.end(); it++)
-    //     std::cout << it->first << std::endl;
-    
+    assign_overload_test();
+    system ("leaks a.out");
 }

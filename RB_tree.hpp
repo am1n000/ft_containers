@@ -56,8 +56,8 @@ namespace ft
 			typedef typename node_allocator::const_pointer  									const_pointer;
 			typedef typename node_allocator::size_type      									size_type;
 			typedef typename node_allocator::difference_type									difference_type;
-			typedef typename ft::tree_iterator<value_type*, pointer>	   						iterator;
-			typedef typename ft::tree_iterator<value_type*, const_pointer>						const_iterator;
+			typedef typename ft::tree_iterator<value_type*, pointer, Compare>	   				iterator;
+			typedef typename ft::tree_iterator<value_type*, const_pointer, Compare>				const_iterator;
 			typedef	Compare																		key_compare;
 
 		private:
@@ -65,7 +65,6 @@ namespace ft
 				node<value_type>	*_root;
 				node<value_type>	*_nil;
 				node<value_type>	*_begin;
-				node<value_type>	*_end;
 				Allocator			_alloc;
 				node_allocator		_node_alloc;
 				key_compare 		_comp;
@@ -76,35 +75,49 @@ namespace ft
 			// constructors
 				//empty constructor
 			RB_tree (const Compare& c, const Allocator& alloc)
-			:_nil(NULL), _alloc(alloc), _comp(c), _size(0)
+			:_root(nullptr), _nil(NULL), _alloc(alloc), _comp(c), _size(0)
 			{
 				this->_nil = this->_node_alloc.allocate(1);
-				this->_node_alloc.construct(this->_nil, node<value_type>(NULL, NULL, NULL, BLACK, 1, 0)); //! replace NULL with this nil
+				this->_node_alloc.construct(this->_nil, node<value_type>(this->_nil, this->_nil, this->_nil, BLACK, 1, 0));
+				this->_nil->value = this->_alloc.allocate(1);
 				this->_alloc.construct(this->_nil->value, value_type());
-                this->_root = this->_nil;
-                this->_root->parent = this->_nil;
                 this->_begin = this->_nil;
-				this->_end = this->_nil;
-                this->_end->is_end = 1;
 			};
 			RB_tree (const RB_tree& x)
 			: _alloc(x.value_alloc()),_comp(x.value_comp()), _size(0)
 			{
-				for (iterator it = x.begin(); it != x.end(); it++)
-					insert(this->_root, *it);
+				*this = x;
 			};
 			
-			//.deletion.................................................
-			void delete_node(node<value_type> *nd)
+			RB_tree &operator=(const RB_tree& x) 
 			{
-				this->_node_alloc.destroy(nd);
-				this->_node_alloc.deallocate(nd, 1);
-			}
+				if (this->_size)
+					this->clear();
 
-			// destructor
+				this->_size = 0;
+				this->_alloc = x.value_alloc();
+				this->_comp = x.value_comp();
+				this->_nil = this->_node_alloc.allocate(1);
+				this->_node_alloc.construct(this->_nil, node<value_type>(this->_nil, this->_nil, this->_nil, BLACK, 1, 0));
+				this->_nil->value = this->_alloc.allocate(1);
+				this->_alloc.construct(this->_nil->value, value_type());
+				this->_root = nullptr;
+                this->_begin = this->_nil;
+
+				iterator it_end = x.end();
+				for (iterator it = x.begin(); it != it_end; it++)
+					insert(this->_root, *it);
+				return (*this);
+			};
+
+			// destructor 
 			~RB_tree()
 			{
 				this->clear();
+				this->_alloc.destroy(this->_nil->value);
+				this->_alloc.deallocate(this->_nil->value, 1);
+				this->_node_alloc.destroy(this->_nil);
+				this->_node_alloc.deallocate(this->_nil, 1);
 			};
 
 			//base
@@ -125,11 +138,11 @@ namespace ft
 				// end
 			iterator end()
 			{
-				return (iterator(_end));
+				return (iterator(this->_nil));
 			};
 			const_iterator end() const
 			{
-				return (iterator(_end));
+				return (const_iterator(this->_nil));
 			};
 
 			// capacity
@@ -207,11 +220,11 @@ namespace ft
 
 			iterator lower_bound (const key_type& k)
 			{				
-				node<value_type> 	*found = this->_end;
+				node<value_type> 	*found = this->_nil;
 				node<value_type>	*temp = this->_root;
-				while (temp->is_nil == 0)
+				while (temp && temp->is_nil == 0)
 				{
-					if (!this->_comp(temp->value, k))
+					if (!this->_comp(*temp->value, k))
 					{
 						found = temp;
 						temp = temp->left;
@@ -221,15 +234,15 @@ namespace ft
 				}
 				if (found != this->_nil)
 					return (found);
-				return (this->_end);
+				return (this->_nil);
 			};			
 			const_iterator lower_bound (const key_type& k) const
 			{				
-				node<value_type> 	*found = this->_end;
+				node<value_type> 	*found = this->_nil;
 				node<value_type>	*temp = this->_root;
-				while (temp->is_nil == 0)
+				while (temp && temp->is_nil == 0)
 				{
-					if (!this->_comp(temp->value, k))
+					if (!this->_comp(*temp->value, k))
 					{
 						found = temp;
 						temp = temp->left;
@@ -239,17 +252,17 @@ namespace ft
 				}
 				if (found != this->_nil)
 					return (found);
-				return (this->_end);
+				return (this->_nil);
 			};			
 
 			iterator upper_bound (const key_type& k)
 			{				
-				node<value_type> 	*found = this->_end;
+				node<value_type> 	*found = this->_nil;
 				node<value_type>	*temp = this->_root;
 
-				while (temp->is_nil == 0)
+				while (temp && temp->is_nil == 0)
 				{
-					if (!this->_comp(temp->value, k))
+					if (!this->_comp(*temp->value, k))
 					{
 						found = temp;
 						temp = temp->left;
@@ -257,21 +270,21 @@ namespace ft
 					else
 						temp = temp->right;
 				}
-				if (found != this->_nil && !this->_comp(k, found->value))
+				if (found != this->_nil && !this->_comp(k, *found->value))
 					return (++(iterator(found)));
 				else if (found != this->_nil)
 					return (iterator(found));
-				return (this->_end);
+				return (this->_nil);
 
 			};
 			const_iterator upper_bound (const key_type& k) const
 			{				
-				node<value_type> 	*found = this->_end;
+				node<value_type> 	*found = this->_nil;
 				node<value_type>	*temp = this->_root;
 
-				while (temp->is_nil == 0)
+				while (temp && temp->is_nil == 0)
 				{
-					if (!this->_comp(temp->value, k))
+					if (!this->_comp(*temp->value, k))
 					{
 						found = temp;
 						temp = temp->left;
@@ -279,11 +292,11 @@ namespace ft
 					else
 						temp = temp->right;
 				}
-				if (found != this->_nil && !this->_comp(k, found->value))
+				if (found != this->_nil && !this->_comp(k, *found->value))
 					return (++(iterator(found)));
 				else if (found != this->_nil)
 					return (iterator(found));
-				return (this->_end);
+				return (this->_nil);
 
 			};
 			
@@ -344,27 +357,33 @@ namespace ft
 			//insertion
 			pair<iterator,bool> insert (iterator pos, const value_type& val)
 			{
+				iterator temp_pos = pos;
                 node<value_type> *element = this->_root;
+				if (!this->_root)
+					element = this->_nil;
                 node<value_type> *position = this->_nil;
                 node<value_type> *new_node = this->_node_alloc.allocate(1);
                 this->_node_alloc.construct(new_node, node<value_type>(this->_nil, this->_nil, this->_nil, RED, 0, 0));
+                new_node->value = this->_alloc.allocate(1);
 				this->_alloc.construct(new_node->value, val);
 				// ?checking pos..................
+				if (this->_root != NULL && pos != this->end())
+				{
 					iterator after = ++pos;
-					--pos;
+					pos = temp_pos;
 					iterator before = --pos;
-					++pos;
-					if (this->_comp(*pos, *after) && !(this->_comp(*pos, *before)) && ((pos.base())->left->is_nil || (pos.base())->right->is_nil))
-						element = pos.base();
+					if ((this->_comp(*temp_pos, val) && (this->_comp(val, *after) || temp_pos.base() == this->_nil) && temp_pos.base()->right->is_nil)
+						|| (this->_comp(val, *temp_pos) && (this->_comp(*before, val) || temp_pos.base() == this->_begin) && temp_pos.base()->left->is_nil))// ? to check if the given position is the right position to insert 
+						element = temp_pos.base();
+				}
+
 				// ? ..........................................................
                 while (element != this->_nil) // find where to insert
                 {
                     position = element;
-                    if (new_node->value == element->value)
+                    if (!this->_comp(*new_node->value, *element->value) && !this->_comp(*element->value, *new_node->value))
                     {
-                        this->_node_alloc.destroy(new_node);
-                        this->_node_alloc.deallocate(new_node, 1);
-						std::cout << "already there" << std::endl;
+						this->destroy(new_node);
                         return(pair<iterator,bool> (iterator(element), false));//element already exists
                     }
                     if (this->_comp(*new_node->value, *element->value))
@@ -376,9 +395,10 @@ namespace ft
                 if (position == this->_nil)      // if tree is empty 
                 {
                     this->_root = new_node;     //new node is root
+                    this->_root->is_end = 1;
                     this->_root->parent = this->_nil;
                     this->_begin = new_node;
-                    this->_end->parent = new_node;
+                    this->_nil->parent = new_node;
                     this->_root->color = BLACK;
                 }
                 else if (this->_comp(*new_node->value, *position->value)) // now we just modify the parent
@@ -387,8 +407,12 @@ namespace ft
                     position->right = new_node;
                 if (this->_comp(*new_node->value, *this->_begin->value))
                     this->_begin = new_node;
-                if (!this->_comp(*new_node->value, *this->_end->parent->value))
-                    this->_end->parent = new_node;
+                if (this->_comp(*this->_nil->parent->value, *new_node->value))
+				{
+                    this->_nil->parent->is_end = 0;
+                    this->_nil->parent = new_node;
+                    new_node->is_end = 1;
+				}
                 check_insertion(new_node);
 				this->_size++;
 				return (pair<iterator,bool> (iterator(new_node), 1));
@@ -399,30 +423,111 @@ namespace ft
 			{
 				node<value_type> 	*found = this->_nil;
 				node<value_type>	*temp = this->_root;
-
-				while (temp->is_nil == 0)
+				while (temp && temp->is_nil == 0)
 				{
-					if (!this->_comp(temp->value, k)) // ? if it the value is lower
+					if (!this->_comp(*temp->value, k)) // ? if it the value is lower
 					{
 						found = temp;
+						if(!this->_comp(k, *temp->value))
+							return (found);
 						temp = temp->left;
 					}
 					else							// ? if the value is greater
 						temp = temp->right;
 				}
-				if (found != this->_nil && !this->_comp(k, found->value))
-					return (found);
-				return (this->_end);
+				return (this->_nil);
+			};
+			const node<value_type> *find (const key_type& k) const
+			{
+				node<value_type> 	*found = this->_nil;
+				node<value_type>	*temp = this->_root;
+				while (temp && temp->is_nil == 0)
+				{
+					if (!this->_comp(*temp->value, k)) // ? if it the value is lower
+					{
+						found = temp;
+						if(!this->_comp(k, *temp->value))
+							return (found);
+						temp = temp->left;
+					}
+					else							// ? if the value is greater
+						temp = temp->right;
+				}
+				return (this->_nil);
 			};
 
+			iterator at (const key_type& k) const
+			{
+				node<value_type> 	*found = this->_nil;
+				node<value_type>	*temp = this->_root;
+				while (temp && temp->is_nil == 0)
+				{
+					if (!this->_comp(*temp->value, k)) // ? if it the value is lower
+					{
+						found = temp;
+						if(!this->_comp(k, *temp->value))
+							return (iterator(found));
+						temp = temp->left;
+					}
+					else							// ? if the value is greater
+						temp = temp->right;
+				}
+        		throw (std::out_of_range("map::at:  key not found"));
+				return (this->_nil);
+			};
+
+			// .count......................................................................................
+
+			size_type count (const key_type& k) const
+			{
+				node<value_type>	*temp = this->_root;
+				while (temp->is_nil == 0)
+				{
+					if (!this->_comp(*temp->value, k)) // ? if it the value is lower
+					{
+						if(!this->_comp(k, *temp->value))
+							return (1);
+						temp = temp->left;
+					}
+					else							// ? if the value is greater
+						temp = temp->right;
+				}
+				return (0);
+			};
 
 			// . deletion...................................................
+
+			void	delete_node(node<value_type> *nd)
+			{
+				this->_alloc.destroy(nd->value);
+				this->_alloc.deallocate(nd->value, 1);
+				this->_node_alloc.destroy(nd);
+				this->_node_alloc.deallocate(nd, 1);
+			}
+			void destroy(node<value_type> *nd)
+			{
+				if (nd != NULL)
+				{
+					if (nd->left->is_nil)
+						nd->left = nullptr;
+					if (nd->right->is_nil)
+						nd->right = nullptr;
+					destroy(static_cast< node<value_type>* >(nd->left));
+					destroy(static_cast< node<value_type>* >(nd->right));
+					delete_node(nd);
+				}
+			}
 
 			// clear
 			void clear()
 			{
-				for (iterator it = begin(); it != this->end(); it++)
-					this->delete_node(it.base());
+				if (this->_root)
+				{
+					if (this->_root->is_nil == 0)
+						destroy(this->_root);
+				}
+				this->_begin = this->_nil;
+				this->_root = nullptr;
 				this->_size = 0;
 			}
 			void fix_deletion(node<value_type> *child) // ? based on lenny's lecture
@@ -435,6 +540,7 @@ namespace ft
 						sibling = child->parent->right;
 						if (sibling->color == RED) // case 4, //? which will always be followed by other cases
 						{
+							// std::cout << " case01" <<std::endl;
 							sibling->color = BLACK;		// ? swapping colors of sibling
 							child->parent->color = RED; // ? and parent
 							this->left_rotate(child->parent, sibling); // ? rotate to the direction of DB
@@ -442,6 +548,7 @@ namespace ft
 						}
 						if (sibling->left->color == BLACK && sibling->right->color == BLACK) // case 3 
 						{
+							// std::cout << " case02" <<std::endl;
 							sibling->color = RED; // ? make the sibling RED (angry)
 							child = child->parent;
 						} // ? if the parent is red exit the loop and <<<make it black>>>. if not reloop because the child now is DB
@@ -449,14 +556,16 @@ namespace ft
 						{
 							if (sibling->right->color == BLACK) // case 5 // ? which will be always followed by case 6
 							{
+							// std::cout << " case03" <<std::endl;
 								sibling->left->color = BLACK; // ? come down the angry child
 								sibling->color = RED; // ? make the parent angry
 								this->right_rotate(sibling, sibling->left); // ? rotate in opposite direction of DB
 								sibling = child->parent->right; // ? there is a new sibling because we rotated 
 							}
+							// case 6
+							// std::cout << " case04" <<std::endl;
 							sibling->color = child->parent->color; // ? give parent color to sibling
-							child ->parent->color = BLACK; // ? make parent black  
-							//!      child ->parent->color = BLACK;  needs to be checked(Black or its child's color ?)
+							child->parent->color = BLACK; // ? make parent black 
 							sibling->right->color = BLACK; // ? give the extra black to the angry child
 							this->left_rotate(child->parent, sibling);
 							child = this->_root; // ? to exit the loop
@@ -464,9 +573,10 @@ namespace ft
 					}
 					else // ? if its a right child
 					{
-						sibling = child->parent->right;
+						sibling = child->parent->left;
 						if (sibling->color == RED) // case 4, //? which will always be followed by other cases
 						{
+							// std::cout << " case1" <<std::endl;
 							sibling->color = BLACK;		// ? swapping colors of sibling
 							child->parent->color = RED; // ? and parent
 							this->right_rotate(child->parent, sibling); // ? rotate to the direction of DB
@@ -474,6 +584,7 @@ namespace ft
 						}
 						if (sibling->right->color == BLACK && sibling->left->color == BLACK) // case 3 
 						{
+							// std::cout << " case2" <<std::endl;
 							sibling->color = RED; // ? make the sibling RED (angry)
 							child = child->parent;
 						} // ? if the parent is red exit the loop and <<<make it black>>>. if not reloop because the child now is DB
@@ -481,14 +592,16 @@ namespace ft
 						{
 							if (sibling->left->color == BLACK) // case 5 // ? which will be always followed by case 6
 							{
+							// std::cout << " case3" <<std::endl;
 								sibling->right->color = BLACK; // ? come down the angry child
 								sibling->color = RED; // ? make the parent angry
-								this->left_rotate(sibling, sibling->left); // ? rotate in opposite direction of DB
+								this->left_rotate(sibling, sibling->right); // ? rotate in opposite direction of DB
 								sibling = child->parent->left; // ? there is a new sibling because we rotated 
 							}
-							sibling->color = child->parent->color; // ? give parent color to sibling
-							child->parent->color = BLACK; // ? make parent black  
-							//!      child ->parent->color = BLACK;  needs to be checked(Black or its child's color ?)
+							// std::cout << " case4" <<std::endl;
+							//case 6
+							sibling->color = child->parent->color; // ? give parent color to sibling 
+							child->parent->color = BLACK; // ? make parent black
 							sibling->left->color = BLACK; // ? give the extra black to the angry child
 							this->right_rotate(child->parent, sibling);
 							child = this->_root; // ? to exit the loop
@@ -505,31 +618,33 @@ namespace ft
 			size_type erase (const key_type& k)
 			{
 				node<value_type>	*x = this->find(k);
-				if (x == this->_end)
+				if (x == this->_nil)
 					return (0);
 				node<value_type>	*temp1 = x;
-				int x_original_color = x->color;
+				int temp1_original_color = temp1->color;
 				node<value_type>	*temp2;
+				node<value_type>	*store_end = this->_node_alloc.allocate(1);
+				this->_node_alloc.construct(store_end, node<value_type>(this->_nil->parent, this->_nil, this->_nil, BLACK, 1, 0));
+				if (x == this->_nil->parent) // ? x is the end node , its parent will be the end  node
+				{
+					store_end->parent = (--(--(this->end()))).base();
+				}
 				if (x->left->is_nil) // if x has at most one child replace it with that child
 				{
 					if (x == this->_begin)
 						this->_begin = (++(this->begin())).base();
-					if (x == this->_end->parent)
-						this->_end =(--(--(this->end()))).base();
 					temp2 = x->right;
 					this->node_exchange(x, x->right);
 				}
 				else if (x->right->is_nil)
 				{
-					if (x == this->_end->parent)
-						this->_end =(--(--(this->end()))).base();
 					temp2 = x->left;
 					this->node_exchange(x, x->left);
 				}
 				else // ? it has two children
 				{
 					temp1 = this->tree_min(x->right);
-					x_original_color = x->color;
+					temp1_original_color = temp1->color;
 					temp2 = temp1->right;
 					if (temp1 != x->right) // ? temp1 is not x's direct right child
 					{
@@ -544,19 +659,50 @@ namespace ft
 					temp1->left->parent = temp1;
 					temp1->color = x->color;		// ? fix color
 				}
-				// remove(x)
-				if (x_original_color == BLACK) //? case 1: if the deleted node is red just exit
+				if (temp1_original_color == BLACK) //? case 1: if the deleted node is red just exit
 					fix_deletion(temp2);
+				this->_nil->parent = store_end->parent;
+				this->_node_alloc.destroy(store_end);
+				this->_node_alloc.deallocate(store_end, 1);
+				delete_node(x);
 				this->_size--;
+				if (_size == 0)
+					this->_begin = this->_nil;
 				return(1);
 			};
 
-			// void erase(iterator position)
-			// {
-			// 	if (*position == this->find(*position))
-			// }
-			//..................................................................................
+			//. swap..........................................................................................
+			
+			template< typename key_typ, typename value_typ, class Compar, class Allocato> 
+			void swap(RB_tree<key_typ, value_typ, Compar, Allocato>& __t)
+			{
+				node<value_type>	*temp_root = this->_root;
+				node<value_type>	*temp_nil = this->_nil;
+				node<value_type>	*temp_begin = this->_begin;
+				Allocator			temp_alloc = this->_alloc;
+				node_allocator		temp_node_alloc = this->_node_alloc;
+				key_compare 		temp_comp = this->_comp;
+				size_type	 		temp_size = this->_size;
+				
+				this->_root = __t._root;
+				this->_nil = __t._nil;
+				this->_begin = __t._begin;
+				this->_alloc = __t._alloc;
+				this->_node_alloc = __t._node_alloc;
+				this->_comp = __t._comp;
+				this->_size = __t._size;
 
+				__t._root = temp_root;
+				__t._nil = temp_nil;
+				__t._begin = temp_begin;
+				__t._alloc = temp_alloc;
+				__t._node_alloc = temp_node_alloc;
+				__t._comp = temp_comp;
+				__t._size = temp_size;
+
+			}
+			
+			//. comp && alloc..................................................................................
 
 			Compare value_comp() const
 			{
