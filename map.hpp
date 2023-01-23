@@ -114,10 +114,6 @@ namespace ft
 			// assignement operator =
 			map& operator= (const map& x)
 			{
-				if (*this == x)
-					return (*this);
-				if (!this->empty())
-					this->erase(this->begin(), this->end());
 				this->_data = x._data;
 				return (*this);
 			};

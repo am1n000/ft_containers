@@ -75,6 +75,12 @@ namespace ft
 
 			// destructor
 			~vec_iterator() {}
+			//dereference vec_iteratorç
+			iterator_type base() const
+			{
+				return (_data);
+			}
+
 			//dereference vec_iterator
 			reference operator*() const
 			{
@@ -83,11 +89,6 @@ namespace ft
 				tmp = _data;
 				return (*tmp);
 			}
-			iterator_type base() const
-			{
-				return (_data);
-			};
-
 			//operator +
 			//increment operators
 			vec_iterator& operator++() //pre increment

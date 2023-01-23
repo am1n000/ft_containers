@@ -86,15 +86,26 @@ namespace ft
 			RB_tree (const RB_tree& x)
 			: _alloc(x.value_alloc()),_comp(x.value_comp()), _size(0)
 			{
-				*this = x;
+				this->_alloc = x.value_alloc();
+				this->_comp = x.value_comp();
+				this->_nil = this->_node_alloc.allocate(1);
+				this->_node_alloc.construct(this->_nil, node<value_type>(this->_nil, this->_nil, this->_nil, BLACK, 1, 0));
+				this->_nil->value = this->_alloc.allocate(1);
+				this->_alloc.construct(this->_nil->value, value_type());
+				this->_root = nullptr;
+                this->_begin = this->_nil;
+
+				iterator it_end = x.end();
+				for (iterator it = x.begin(); it != it_end; it++)
+					insert(this->_root, *it);
 			};
 			
 			RB_tree &operator=(const RB_tree& x) 
 			{
 				if (this->_size)
 					this->clear();
-
-				this->_size = 0;
+				if (this->_nil)
+					destroy(this->_nil);
 				this->_alloc = x.value_alloc();
 				this->_comp = x.value_comp();
 				this->_nil = this->_node_alloc.allocate(1);
@@ -407,9 +418,9 @@ namespace ft
                     position->right = new_node;
                 if (this->_comp(*new_node->value, *this->_begin->value))
                     this->_begin = new_node;
-                if (this->_comp(*this->_nil->parent->value, *new_node->value))
+                if (!this->_comp(*new_node->value, *this->_nil->parent->value))
 				{
-                    this->_nil->parent->is_end = 0;
+                    this->_nil->parent->is_end = 0; // ! si end is not necessary
                     this->_nil->parent = new_node;
                     new_node->is_end = 1;
 				}
@@ -481,7 +492,7 @@ namespace ft
 			size_type count (const key_type& k) const
 			{
 				node<value_type>	*temp = this->_root;
-				while (temp->is_nil == 0)
+				while (temp && temp->is_nil == 0)
 				{
 					if (!this->_comp(*temp->value, k)) // ? if it the value is lower
 					{
@@ -512,7 +523,7 @@ namespace ft
 						nd->left = nullptr;
 					if (nd->right->is_nil)
 						nd->right = nullptr;
-					destroy(static_cast< node<value_type>* >(nd->left));
+					destroy(static_cast< node<value_type>* >(nd->left)); // ! remove this
 					destroy(static_cast< node<value_type>* >(nd->right));
 					delete_node(nd);
 				}
