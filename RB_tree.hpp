@@ -15,9 +15,6 @@
 
 #define FT_RB_TREE
 
-#include <iostream>
-#include <iostream>
-#include <map>
 #include "ft_iterators.hpp"
 #include "utility.hpp"
 

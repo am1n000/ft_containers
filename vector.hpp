@@ -14,13 +14,8 @@
 
 #define FT_VECTOR
 
-#include <iostream>
-#include <iostream>
-#include <vector>
 #include "ft_iterators.hpp"
 #include "utility.hpp"
-#include <stdlib.h>
-#include <unistd.h>
 
 namespace ft
 {
@@ -481,7 +476,7 @@ namespace ft
 			
 			iterator erase (iterator position)
 			{
-				size_type count = position - this->begin();
+				size_type count = std::distance(this->begin(), position);
 				_size--;
 				for (;count < _size; count++)
 					*(_data + count) = *(_data + count + 1);
@@ -492,7 +487,7 @@ namespace ft
 			{
 				iterator temp = first;
 				size_t count = first - this->begin();
-				size_t n = last - first;
+				size_t n = std::distance(first, last);
 				if (n == 0)
 					return (first);
 				for (;count + n < _size; count++)

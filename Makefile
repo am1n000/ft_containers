@@ -1,16 +1,13 @@
 CPP=C++
-CFLAGS= -Wall -Wextra -Werror -Wshadow -std=c++98
+FLAGS= -Wall -Wextra -Werror -Wshadow -std=c++98
 NAME=Containers
 SRC=main.cpp
-OBJ=$(SRC:.cpp=.o)
 
 all: $(NAME)
 
-%.o: %.cpp
-	@$(CPP) $(CFLAGS) -c $< -o $@
 
-$(NAME): $(OBJ)
-	@$(CPP) $(CFLAGS) $^ -o $@
+$(NAME): $(SRC)
+	@$(CPP) $(FLAGS) $^ -o $@
 	@echo "\033[32m Compilation success\033[0m"
 
 clean:
