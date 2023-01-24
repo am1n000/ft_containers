@@ -3,22 +3,11 @@
 #define FT_TOOLS
 
 #include "ft_iterators.hpp"
+#include "type_traits.hpp"
 
 
 namespace ft
 {
-
-
-    // enable_if
-    template<bool Cond, class T = void> // if false
-    struct enable_if {};
-
-    template<class T> // specialization
-    struct enable_if<true, T> // if true
-    {
-        typedef T type;
-    };
-    ///////////////////////////////////////
 
     // ft::equal
     template <class InputIterator1, class InputIterator2>
@@ -51,48 +40,6 @@ namespace ft
     ////////////////////////////////
 
 
-    // ft::is_integral
-    template <class T, T v>
-    struct integral_constant
-    {
-        static const T value = v;
-        typedef T value_type;
-        typedef integral_constant<T,v> type;
-        operator T()
-        { return v; }
-    };
-
-    template <class T>
-    struct is_integral : integral_constant<bool, false> {};
-    template <> // this is a specialisation
-    struct is_integral<bool> : integral_constant<bool, true> {}; // <bool> to indicate that this specialization is for type bool
-    template <> 
-    struct is_integral<char> : integral_constant<bool, true> {};
-    template <> 
-    struct is_integral<signed char> : integral_constant<bool, true> {};
-    template <> 
-    struct is_integral<short int> : integral_constant<bool, true> {};
-    template <> 
-    struct is_integral<int> : integral_constant<bool, true> {};
-    template <> 
-    struct is_integral<wchar_t> : integral_constant<bool, true> {};
-    template <> 
-    struct is_integral<char16_t> : integral_constant<bool, true> {};
-    template <> 
-    struct is_integral<long int> : integral_constant<bool, true> {};
-    template <> 
-    struct is_integral<long long int> : integral_constant<bool, true> {};
-    template <> 
-    struct is_integral<unsigned char> : integral_constant<bool, true> {};
-    template <> 
-    struct is_integral<unsigned short int> : integral_constant<bool, true> {};
-    template <> 
-    struct is_integral<unsigned int> : integral_constant<bool, true> {};
-    template <> 
-    struct is_integral<unsigned long int> : integral_constant<bool, true> {};
-    template <> 
-    struct is_integral<unsigned long long int> : integral_constant<bool, true> {};
-    ///////////////////////////////
 
     //ft::pair
     template <class T1, class T2>
